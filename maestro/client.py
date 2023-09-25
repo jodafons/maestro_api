@@ -41,18 +41,14 @@ class maestro_client:
     def ping(self):
         return False if self.try_request('ping', method="get") is None else True
 
-
     def create(self, task : Task):
       return self.try_request("create", method='post', body=task.json())
 
+    def delete(self, task : Task):
+      return self.try_request(f"delete", method='post', body=task.json())
 
-    def delete(self, task_id : int):
-      return self.try_request(f"delete/{task_id}", method='post')
+    def kill(self, task : Task):
+      return self.try_request(f"kill", method='post', body=task.json())
 
-
-    def kill(self, task_id : int):
-      return self.try_request(f"kill/{task_id}", method='post')
-
-
-    def retry(self, task_id : int):
-      return self.try_request(f"retry/{task_id}", method='post')
+    def retry(self, task : Task):
+      return self.try_request(f"retry", method='post', body=task.json())

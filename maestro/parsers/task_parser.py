@@ -59,14 +59,17 @@ class task_parser:
 
       delete_parser.add_argument('--id', action='store', dest='id', required=True,
                     help = "All task ids to be deleted", type=str)
- 
+      delete_parser.add_argument('--token', action='store', dest='token', required=True,
+                          help = "the user token.")
       retry_parser.add_argument('--id', action='store', dest='id', required=True,
                     help = "All task ids to be retried", type=str)
-
+      retry_parser.add_argument('--token', action='store', dest='token', required=True,
+                          help = "the user token.")
       kill_parser = argparse.ArgumentParser(description = '', add_help = False)
       kill_parser.add_argument('--id', action='store', dest='id', required=True, 
                     help = "All task ids to be killed", type=str)
-
+      kill_parser.add_argument('--token', action='store', dest='token', required=True,
+                          help = "the user token.")
 
       parent = argparse.ArgumentParser(description = '', add_help = False)
       subparser = parent.add_subparsers(dest='option')
@@ -91,16 +94,16 @@ class task_parser:
                     do_test=args.do_test, binds=args.binds, partition=args.partition)
 
       elif args.option == 'retry':
-        self.retry(convert_string_to_range(args.id))
+        self.retry(args.token, convert_string_to_range(args.id))
         
       elif args.option == 'delete':
-        self.delete(convert_string_to_range(args.id))
+        self.delete(args.token, convert_string_to_range(args.id))
         
       elif args.option == 'list':
         self.list()
         
       elif args.option == 'kill':
-        self.kill(convert_string_to_range(args.id))
+        self.kill(args.token, convert_string_to_range(args.id))
         
       else:
         logger.error("Option not available.")
@@ -112,7 +115,7 @@ class task_parser:
                     inputfile: str,
                     image: str, 
                     command: str, 
-                    email: str, 
+                    token: str, 
                     dry_run: bool=False, 
                     do_test=True,
                     extension='.json', 
@@ -143,26 +146,22 @@ class task_parser:
 
         extension = input_file.split('/')[-1].split('.')[-1]
         workarea = volume +'/'+ input_file.split('/')[-1].replace('.'+extension, '')
-        job = Job(
-                      id=job_id,
-                      image=image,
-                      command=command.replace('%IN',input_file),
-                      workarea=workarea,
-                      inputfile=input_file,
-                      envs=str({}),
-                      binds=binds,
-                      status='',
-                      partition=partition
-                    )
+        job = Job( image=image,
+                   command=command.replace('%IN',input_file),
+                   workarea=workarea,
+                   inputfile=input_file,
+                   envs=str({}),
+                   binds=binds,
+                   partition=partition)
+
         jobs.append(job)
 
 
-    task = Task( name = taskname, 
-                 id   = -1,
-                 volume = volume,
-                 jobs = jobs,
-                 partition = partition,
-                 status = ''
+    task = Task( name       = taskname, 
+                 volume     = volume,
+                 jobs       = jobs,
+                 partition  = partition,
+                 token      = token
                  )
 
 
@@ -177,7 +176,6 @@ class task_parser:
         logger.error(f"service not available. please check your endpoint {self.api.host}")
         return False
       res = self.api.create(task)
-      print(res)
       if res:
         logger.info(res[1])
 
@@ -185,26 +183,26 @@ class task_parser:
 
 
 
-  def kill(self, task_ids):
+  def kill(self, token, task_ids):
     for task_id in task_ids:
       logger.info(f"sending kill command for task {task_id} to the server...")
-      res = self.api.kill(task_id)
+      res = self.api.kill(Task(token=token , id=task_id))
       if res:
         logger.info(res[1])
 
 
-  def delete(self, task_ids):
+  def delete(self, token, task_ids):
     for task_id in task_ids:
       logger.info(f"sending delete command for task {task_id} to the server...")
-      res = self.api.delete(task_id)
+      res = self.api.delete(Task(token=token , id=task_id))
       if res:
         logger.info(res[1])
 
 
-  def retry(self, task_ids):
+  def retry(self, token, task_ids):
     for task_id in task_ids:
       logger.info(f"sending retry command for task {task_id} to the server...")
-      res = self.api.retry(task_id)
+      res = self.api.retry(Task(token=token , id=task_id))
       if res:
         logger.info(res[1])
 

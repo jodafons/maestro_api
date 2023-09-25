@@ -2,3 +2,5 @@ loguru
 tqdm
 pydantic
 psutil
+orjson
+numpy
